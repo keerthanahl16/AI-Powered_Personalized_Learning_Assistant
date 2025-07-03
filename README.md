@@ -10,7 +10,7 @@ Features
 
 
 
-Content Generation: Users can input a topic (e.g., "machine learning") and related interests to receive a detailed overview, including:
+1.Content Generation: Users can input a topic (e.g., "machine learning") and related interests to receive a detailed overview, including:
 
 
 
@@ -36,19 +36,19 @@ Fun facts and recommendations
 
 
 
-Quiz Generation: Creates multiple-choice quizzes based on the topic with questions covering core concepts, applications, and more.
+2.Quiz Generation: Creates multiple-choice quizzes based on the topic with questions covering core concepts, applications, and more.
 
 
 
-Progress Tracking: Saves quiz results with timestamps and scores for later review.
+3.Progress Tracking: Saves quiz results with timestamps and scores for later review.
 
 
 
-Content Saving: Allows users to save generated content as text files and progress as JSON files.
+4.Content Saving: Allows users to save generated content as text files and progress as JSON files.
 
 
 
-User-Friendly Interface: A Tkinter-based GUI with input fields, buttons for generating content, taking quizzes, and managing progress, and a scrollable text area for output.
+5.User-Friendly Interface: A Tkinter-based GUI with input fields, buttons for generating content, taking quizzes, and managing progress, and a scrollable text area for output.
 
 Prerequisites
 
@@ -80,21 +80,21 @@ Installation
 
 
 
-Clone or download the source code to your local machine.
+1.Clone or download the source code to your local machine.
 
 
 
-Install the required dependencies:
+2.Install the required dependencies:
 
 pip install spacy
 
 
 
-Ensure the en_core_web_sm spaCy model is installed (the application will attempt to download it if not present).
+3.Ensure the en_core_web_sm spaCy model is installed (the application will attempt to download it if not present).
 
 
 
-Run the application:
+4.Run the application:
 
 python learning_assistant.py
 
@@ -104,7 +104,7 @@ How to Use
 
 
 
-Launch the Application:
+1.Launch the Application:
 
 
 
@@ -114,7 +114,7 @@ Run the script to open the Tkinter GUI window titled "Learning Assistant".
 
 
 
-Enter Inputs:
+2.Enter Inputs:
 
 
 
@@ -128,7 +128,7 @@ In the "Enter interests" field, provide comma-separated interests (e.g., "AI, ro
 
 
 
-Generate Content:
+3.Generate Content:
 
 
 
@@ -142,7 +142,7 @@ If the input is too vague (e.g., a single word not in the knowledge base), a war
 
 
 
-Take a Quiz:
+4.Take a Quiz:
 
 
 
@@ -156,7 +156,7 @@ Select answers and click Submit Quiz to see your score, correct answers, and a r
 
 
 
-Manage Content and Progress:
+5.Manage Content and Progress:
 
 
 
@@ -182,7 +182,7 @@ Show Progress: Displays quiz history in a pop-up.
 
 
 
-Exit: Close the application window to exit.
+6.Exit: Close the application window to exit.
 
 Code Structure
 
@@ -269,8 +269,7 @@ Step-by-Step Execution
 
 
 
-
-Initialization:
+1.Initialization:
 
 
 
@@ -284,7 +283,7 @@ The Tkinter window is initialized with a styled interface (900x600 pixels, light
 
 
 
-User Input:
+2.User Input:
 
 
 
@@ -298,7 +297,7 @@ The generate method validates input and calls _generate_content.
 
 
 
-Content Generation:
+3.Content Generation:
 
 
 
@@ -316,7 +315,7 @@ A markdown-formatted string is generated with a random detail, example, reason, 
 
 
 
-Quiz Creation:
+4.Quiz Creation:
 
 
 
@@ -330,7 +329,7 @@ Questions are generated based on the topic’s details, examples, and context.
 
 
 
-Quiz Evaluation:
+5.Quiz Evaluation:
 
 
 
@@ -344,7 +343,7 @@ A pop-up displays the score, correct/incorrect answers, a recommendation, and ne
 
 
 
-Saving and Progress:
+6.Saving and Progress:
 
 
 
@@ -413,8 +412,8 @@ Correct: neural networks
 Quiz Result (after submission):
 
 Score: 6/8
-Q1: ✅ Correct
-Q2: ❌ Incorrect (Correct: recommendation systems)
+Q1: Correct
+Q2: Incorrect (Correct: recommendation systems)
 ...
 **Recommendation**: Join Kaggle competitions
 **Next Steps**: Try another quiz on machine learning or explore related topics: AI, data science.
