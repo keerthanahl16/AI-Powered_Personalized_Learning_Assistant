@@ -1,0 +1,572 @@
+import tkinter as tk
+from tkinter import messagebox, ttk, filedialog
+import spacy
+import subprocess
+import sys
+import random
+import uuid
+import os
+import json
+from datetime import datetime
+
+# Check if en_core_web_sm is installed, if not, download it
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    print("Downloading en_core_web_sm model...")
+    subprocess.run([sys.executable, "-m", "spacy", "download", "en_core_web_sm"])
+    nlp = spacy.load("en_core_web_sm")
+
+# Expanded knowledge base with 20 topics
+KNOWLEDGE_BASE = {
+    "machine learning": {
+        "details": ["algorithms", "neural networks", "data preprocessing", "supervised learning"],
+        "examples": ["image recognition in self-driving cars", "spam email filtering", "recommendation systems", "chatbots"],
+        "reasons": ["advancing automation", "improving decision-making", "enabling predictive analytics", "transforming industries"],
+        "actions": ["training a simple model", "exploring datasets on Kaggle", "reading ML research papers", "taking an online course"],
+        "context": "Originating in the 1950s with pioneers like Alan Turing, machine learning has grown into a cornerstone of AI, powering innovations like generative models.",
+        "fun_fact": "The first neural network, the Perceptron, was invented in 1958 and could recognize simple patterns!",
+        "recommendations": ["Enroll in Coursera’s Machine Learning by Andrew Ng", "Explore TensorFlow tutorials", "Join Kaggle competitions", "Read 'Deep Learning' by Goodfellow et al."]
+    },
+    "physics": {
+        "details": ["quantum mechanics", "thermodynamics", "electromagnetism", "relativity"],
+        "examples": ["lasers in medical devices", "heat engines in cars", "MRI scanners", "GPS systems"],
+        "reasons": ["explaining natural phenomena", "driving technological innovation", "understanding the universe", "shaping modern engineering"],
+        "actions": ["conducting simple experiments", "watching physics simulations", "reading about famous physicists", "visiting a science museum"],
+        "context": "Physics, dating back to ancient Greece, was revolutionized by Newton and Einstein, leading to breakthroughs like quantum computing.",
+        "fun_fact": "Einstein’s theory of relativity explains why GPS satellites need time corrections to stay accurate!",
+        "recommendations": ["Watch Feynman’s lectures on YouTube", "Explore PhET simulations", "Read 'A Brief History of Time' by Stephen Hawking", "Join a local physics club"]
+    },
+    "biology": {
+        "details": ["genetics", "evolution", "ecology", "cell biology"],
+        "examples": ["CRISPR gene editing", "antibiotic resistance in bacteria", "coral reef conservation", "vaccine development"],
+        "reasons": ["improving health", "preserving ecosystems", "understanding life", "advancing agriculture"],
+        "actions": ["observing local wildlife", "reading about DNA", "volunteering for conservation", "watching biology documentaries"],
+        "context": "Biology took off with Darwin’s theory of evolution in the 19th century, and modern genetics has unlocked secrets of DNA.",
+        "fun_fact": "Humans share 98% of their DNA with chimpanzees!",
+        "recommendations": ["Take a Khan Academy biology course", "Read 'The Selfish Gene' by Richard Dawkins", "Visit a local aquarium", "Explore BioInteractive resources"]
+    },
+    "programming": {
+        "details": ["algorithms", "data structures", "object-oriented programming", "web development"],
+        "examples": ["building a website", "creating a mobile app", "automating tasks with scripts", "developing video games"],
+        "reasons": ["powering technology", "solving real-world problems", "enabling innovation", "enhancing productivity"],
+        "actions": ["writing a small program", "contributing to open-source projects", "learning a new language", "joining a coding bootcamp"],
+        "context": "Programming began with early computers in the 1940s, and today languages like Python drive everything from AI to websites.",
+        "fun_fact": "The first 'bug' in programming was an actual insect stuck in a computer relay in 1947!",
+        "recommendations": ["Practice on LeetCode", "Contribute to GitHub projects", "Read 'Clean Code' by Robert Martin", "Join a local hackathon"]
+    },
+    "history": {
+        "details": ["ancient civilizations", "world wars", "renaissance", "industrial revolution"],
+        "examples": ["pyramid construction in Egypt", "D-Day invasion", "Leonardo da Vinci’s inventions", "steam engine development"],
+        "reasons": ["understanding human progress", "learning from past mistakes", "appreciating cultural heritage", "shaping modern society"],
+        "actions": ["visiting historical sites", "reading primary sources", "watching history documentaries", "exploring museums"],
+        "context": "History helps us trace humanity’s journey, from ancient Mesopotamia to the digital age, revealing patterns of change.",
+        "fun_fact": "The Rosetta Stone, discovered in 1799, was key to deciphering Egyptian hieroglyphs!",
+        "recommendations": ["Watch BBC history documentaries", "Read 'Sapiens' by Yuval Noah Harari", "Visit historical museums", "Explore primary source archives online"]
+    },
+    "chemistry": {
+        "details": ["organic chemistry", "chemical reactions", "periodic table", "laboratory techniques"],
+        "examples": ["drug synthesis in pharmaceuticals", "plastic production", "water purification", "battery development"],
+        "reasons": ["advancing medical treatments", "developing new materials", "improving industrial processes", "protecting the environment"],
+        "actions": ["conducting simple experiments", "reading about chemical bonds", "watching chemistry videos", "visiting a science lab"],
+        "context": "Chemistry, known as the central science, bridges physics and biology, driving innovations since Mendeleev’s periodic table in 1869.",
+        "fun_fact": "The smell of rain is caused by actinomycetes bacteria, which releases a scent when wet!",
+        "recommendations": ["Take a chemistry course on edX", "Read 'Chemistry: The Central Science' by Brown", "Explore ChemCollective simulations", "Join a local science club"]
+    },
+    "mathematics": {
+        "details": ["calculus", "algebra", "geometry", "statistics"],
+        "examples": ["optimizing engineering designs", "financial modeling", "computer graphics", "data analysis"],
+        "reasons": ["solving complex problems", "underpinning technology", "enhancing logical reasoning", "driving scientific discovery"],
+        "actions": ["solving math puzzles", "exploring Khan Academy", "reading about famous theorems", "joining a math club"],
+        "context": "Mathematics, the language of science, has shaped fields from astronomy to AI since ancient times with contributions from Euclid to Turing.",
+        "fun_fact": "The number zero was invented in India around the 5th century, revolutionizing mathematics!",
+        "recommendations": ["Watch 3Blue1Brown videos on YouTube", "Read 'The Princeton Companion to Mathematics'", "Practice on Brilliant.org", "Join a math competition"]
+    },
+    "psychology": {
+        "details": ["cognitive psychology", "behavioral psychology", "neuropsychology", "social psychology"],
+        "examples": ["therapy for mental health", "advertising strategies", "learning disabilities research", "group dynamics studies"],
+        "reasons": ["improving mental health", "understanding human behavior", "enhancing education", "informing public policy"],
+        "actions": ["reading about cognitive biases", "watching psychology documentaries", "volunteering in community programs", "taking personality tests"],
+        "context": "Psychology emerged in the late 19th century with pioneers like Freud, expanding to study brain and behavior in modern times.",
+        "fun_fact": "The placebo effect can improve health outcomes even without active treatment!",
+        "recommendations": ["Take a psychology course on Coursera", "Read 'Thinking, Fast and Slow' by Daniel Kahneman", "Explore Psychology Today articles", "Join a local mental health group"]
+    },
+    "economics": {
+        "details": ["microeconomics", "macroeconomics", "international trade", "econometrics"],
+        "examples": ["price setting in markets", "government fiscal policy", "global trade agreements", "stock market analysis"],
+        "reasons": ["guiding financial decisions", "shaping public policy", "understanding global markets", "reducing inequality"],
+        "actions": ["reading about supply and demand", "following economic news", "exploring stock market games", "studying GDP trends"],
+        "context": "Economics, formalized by Adam Smith in the 18th century, explains how societies allocate resources and drives modern financial systems.",
+        "fun_fact": "The term 'economics' comes from the Greek 'oikonomia,' meaning household management!",
+        "recommendations": ["Watch Economics Explained on YouTube", "Read 'Freakonomics' by Levitt and Dubner", "Take an economics course on Khan Academy", "Join an investment club"]
+    },
+    "literature": {
+        "details": ["novels", "poetry", "drama", "literary analysis"],
+        "examples": ["Shakespeare’s plays in theater", "modern novels like '1984'", "poetry slams", "book club discussions"],
+        "reasons": ["exploring human experiences", "enhancing critical thinking", "preserving culture", "inspiring creativity"],
+        "actions": ["reading a classic novel", "writing a poem", "attending a play", "joining a book club"],
+        "context": "Literature, from ancient epics like the Iliad to modern novels, reflects society’s values and challenges across centuries.",
+        "fun_fact": "Ernest Hemingway wrote a six-word story: 'For sale: baby shoes, never worn.'!",
+        "recommendations": ["Read 'To Kill a Mockingbird' by Harper Lee", "Explore Poetry Foundation’s website", "Watch Shakespeare performances", "Join a local book club"]
+    },
+    "geography": {
+        "details": ["physical geography", "human geography", "cartography", "climatology"],
+        "examples": ["mapping urban growth", "studying climate patterns", "analyzing population trends", "exploring river systems"],
+        "reasons": ["understanding global environments", "planning sustainable cities", "managing natural resources", "promoting cultural awareness"],
+        "actions": ["reading about plate tectonics", "using Google Earth", "studying world maps", "visiting national parks"],
+        "context": "Geography, tracing back to ancient mapmakers like Ptolemy, helps us navigate and understand Earth’s physical and human landscapes.",
+        "fun_fact": "Mount Everest grows about 4mm each year due to tectonic activity!",
+        "recommendations": ["Explore National Geographic’s website", "Read 'Prisoners of Geography' by Tim Marshall", "Use Google Earth for virtual tours", "Join a geography quiz league"]
+    },
+    "philosophy": {
+        "details": ["ethics", "logic", "metaphysics", "epistemology"],
+        "examples": ["ethical debates on AI", "logical arguments in law", "questions about reality", "theories of knowledge"],
+        "reasons": ["sharpening critical thinking", "guiding moral decisions", "exploring existence", "informing societal values"],
+        "actions": ["reading about utilitarianism", "debating ethical dilemmas", "studying logical fallacies", "exploring existentialism"],
+        "context": "Philosophy, born in ancient Greece with Socrates, shapes debates on morality, knowledge, and reality in modern times.",
+        "fun_fact": "The philosopher Diogenes lived in a barrel to reject material wealth!",
+        "recommendations": ["Read 'Meditations' by Marcus Aurelius", "Watch CrashCourse Philosophy on YouTube", "Join a philosophy discussion group", "Explore Stanford Encyclopedia of Philosophy"]
+    },
+    "sociology": {
+        "details": ["social structures", "culture", "inequality", "social change"],
+        "examples": ["studying urban communities", "analyzing gender roles", "researching poverty", "exploring social movements"],
+        "reasons": ["understanding societal dynamics", "promoting equality", "informing policy", "enhancing community building"],
+        "actions": ["reading about social theories", "volunteering in communities", "watching sociology documentaries", "studying cultural trends"],
+        "context": "Sociology, formalized in the 19th century by Auguste Comte, examines how societies function and evolve through social interactions.",
+        "fun_fact": "The term 'sociology' was coined in 1838, meaning the study of society!",
+        "recommendations": ["Read 'The Sociological Imagination' by C. Wright Mills", "Watch TED Talks on social issues", "Take a sociology course on Coursera", "Join a community advocacy group"]
+    },
+    "environmental science": {
+        "details": ["ecosystems", "climate change", "sustainability", "biodiversity"],
+        "examples": ["renewable energy projects", "wildlife conservation", "carbon footprint reduction", "ocean cleanup initiatives"],
+        "reasons": ["protecting the planet", "promoting sustainable living", "preserving biodiversity", "addressing climate challenges"],
+        "actions": ["recycling and composting", "reading about climate change", "volunteering for cleanups", "exploring renewable energy"],
+        "context": "Environmental science, growing since the 1960s, combines biology, chemistry, and geography to tackle global environmental issues.",
+        "fun_fact": "A single tree can absorb up to 48 pounds of carbon dioxide per year!",
+        "recommendations": ["Watch 'Before the Flood' documentary", "Read 'Silent Spring' by Rachel Carson", "Join a local environmental group", "Explore WWF’s sustainability resources"]
+    },
+    "data science": {
+        "details": ["data analysis", "machine learning", "data visualization", "big data"],
+        "examples": ["predictive analytics in business", "healthcare data insights", "social media trend analysis", "fraud detection"],
+        "reasons": ["driving business decisions", "uncovering insights", "advancing research", "optimizing processes"],
+        "actions": ["learning Python for data analysis", "exploring Tableau", "reading about statistical methods", "joining data hackathons"],
+        "context": "Data science, emerging in the 2000s with the big data boom, leverages statistics and computing to extract insights from massive datasets.",
+        "fun_fact": "The term 'data science' was first used in 2001 by William S. Cleveland!",
+        "recommendations": ["Take a data science course on DataCamp", "Read 'Python for Data Analysis' by Wes McKinney", "Explore Kaggle datasets", "Join a data science meetup"]
+    },
+    "astronomy": {
+        "details": ["stars", "planets", "galaxies", "black holes"],
+        "examples": ["Hubble Space Telescope images", "Mars rover missions", "gravitational wave detection", "exoplanet discoveries"],
+        "reasons": ["understanding the cosmos", "advancing space exploration", "inspiring scientific curiosity", "informing technology"],
+        "actions": ["stargazing with a telescope", "using planetarium apps", "reading about black holes", "visiting an observatory"],
+        "context": "Astronomy, one of the oldest sciences, has revealed the universe’s vastness through tools like telescopes and space probes.",
+        "fun_fact": "The first exoplanet was discovered in 1995, orbiting a star 50 light-years away!",
+        "recommendations": ["Watch 'Cosmos' by Neil deGrasse Tyson", "Use Stellarium for stargazing", "Read 'Astrophysics for People in a Hurry'", "Join an astronomy club"]
+    },
+    "cryptography": {
+        "details": ["encryption", "hash functions", "public-key cryptography", "digital signatures"],
+        "examples": ["secure online banking", "VPNs for privacy", "blockchain transactions", "encrypted messaging"],
+        "reasons": ["ensuring data security", "protecting privacy", "enabling secure communication", "supporting digital economies"],
+        "actions": ["learning about AES encryption", "exploring blockchain tutorials", "trying cryptography challenges", "reading about RSA"],
+        "context": "Cryptography, used since ancient times, became critical in the digital age for securing data and communications.",
+        "fun_fact": "The Enigma machine, used in WWII, was cracked by Alan Turing!",
+        "recommendations": ["Take a cryptography course on Coursera", "Read 'The Code Book' by Simon Singh", "Explore CryptoHack challenges", "Learn about blockchain on Khan Academy"]
+    },
+    "political science": {
+        "details": ["governance", "international relations", "political theory", "public policy"],
+        "examples": ["elections and voting systems", "diplomatic negotiations", "human rights policies", "legislative processes"],
+        "reasons": ["shaping governance", "promoting global stability", "understanding power dynamics", "informing civic engagement"],
+        "actions": ["reading about political ideologies", "following global news", "participating in debates", "studying constitutions"],
+        "context": "Political science, rooted in thinkers like Aristotle, analyzes how societies govern and interact on local and global scales.",
+        "fun_fact": "The shortest war in history lasted 38 minutes!",
+        "recommendations": ["Read 'The Prince' by Machiavelli", "Watch TED Talks on governance", "Take a political science course on edX", "Join a Model UN club"]
+    },
+    "anthropology": {
+        "details": ["cultural anthropology", "archaeology", "biological anthropology", "linguistic anthropology"],
+        "examples": ["studying indigenous cultures", "excavating ancient artifacts", "researching human evolution", "analyzing language development"],
+        "reasons": ["understanding human diversity", "preserving cultural heritage", "exploring human origins", "promoting cross-cultural understanding"],
+        "actions": ["reading about ancient civilizations", "visiting archaeological sites", "watching anthropology documentaries", "learning a new language"],
+        "context": "Anthropology, formalized in the 19th century, studies humanity’s past and present through culture, biology, and language.",
+        "fun_fact": "The oldest known human ancestor, 'Lucy,' was discovered in 1974 and is 3.2 million years old!",
+        "recommendations": ["Read 'Guns, Germs, and Steel' by Jared Diamond", "Watch National Geographic anthropology videos", "Take an anthropology course on Coursera", "Visit a cultural museum"]
+    },
+    "statistics": {
+        "details": ["probability", "hypothesis testing", "regression analysis", "statistical modeling"],
+        "examples": ["clinical trial analysis", "market research surveys", "sports analytics", "weather forecasting"],
+        "reasons": ["making data-driven decisions", "quantifying uncertainty", "supporting scientific research", "optimizing business strategies"],
+        "actions": ["learning about p-values", "using statistical software like R", "reading about probability", "analyzing datasets"],
+        "context": "Statistics, evolving from the 17th century, provides tools to analyze data and make predictions across disciplines.",
+        "fun_fact": "The term 'statistics' comes from the Latin 'status,' meaning state or condition!",
+        "recommendations": ["Take a statistics course on Khan Academy", "Read 'The Art of Statistics' by David Spiegelhalter", "Practice with R or Python", "Join a data analysis group"]
+    }
+}
+
+def web_search(query):
+    # Placeholder for web search (replace with real API like SerpAPI if available)
+    simulated_results = {
+        "artificial intelligence": {
+            "details": ["deep learning", "natural language processing", "computer vision", "reinforcement learning"],
+            "examples": ["voice assistants like Siri", "facial recognition systems", "autonomous drones", "game-playing AI"],
+            "reasons": ["automating complex tasks", "enhancing human capabilities", "driving innovation", "solving global challenges"],
+            "actions": ["learning about neural networks", "exploring AI frameworks like PyTorch", "reading AI ethics papers", "building a simple AI model"],
+            "context": "Artificial intelligence, sparked by early computing in the 20th century, is transforming industries with intelligent systems.",
+            "fun_fact": "The term 'artificial intelligence' was coined in 1956 at a Dartmouth conference!",
+            "recommendations": ["Take an AI course on Udacity", "Read 'Artificial Intelligence: A Guide for Thinking Humans' by Melanie Mitchell", "Explore Google’s AI experiments", "Join an AI meetup"]
+        },
+        "quantum computing": {
+            "details": ["qubits", "superposition", "entanglement", "quantum gates"],
+            "examples": ["drug discovery simulations", "cryptographic algorithms", "optimization problems", "quantum machine learning"],
+            "reasons": ["solving intractable problems", "advancing computational power", "revolutionizing cryptography", "enabling new scientific discoveries"],
+            "actions": ["reading about quantum mechanics", "exploring IBM’s Qiskit", "watching quantum computing tutorials", "joining quantum forums"],
+            "context": "Quantum computing, emerging in the 1980s, leverages quantum mechanics to perform computations beyond classical computers.",
+            "fun_fact": "A quantum computer can process 2^n states simultaneously with n qubits!",
+            "recommendations": ["Take a quantum computing course on Coursera", "Read 'Quantum Computing for Everyone' by Chris Bernhardt", "Experiment with IBM Qiskit", "Join a quantum computing community"]
+        }
+    }
+    return simulated_results.get(query.lower(), {
+        "details": [f"{query} concepts", "key principles", "core ideas", "fundamentals"],
+        "examples": [f"{query} in practice", f"real-world {query}", f"{query} application", "common use"],
+        "reasons": ["its practical uses", "its impact on society", "its role in innovation", "its importance"],
+        "actions": [f"researching {query}", f"watching {query} videos", f"reading about {query}", f"exploring {query} projects"],
+        "context": f"{query.capitalize()} is an emerging or specialized field with growing relevance.",
+        "fun_fact": f"Fun fact: {query} is a topic worth exploring online!",
+        "recommendations": [f"Search for {query} tutorials on YouTube", f"Read articles about {query} on Wikipedia", f"Explore {query} courses on Udemy", f"Join a {query} community online"]
+    })
+
+def generate_content(query, interests):
+    if not isinstance(query, str) or not query.strip():
+        query = "learning"
+
+    doc = nlp(query.lower())
+    keywords = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
+    entities = [ent.text.lower() for ent in doc.ents]
+    noun_chunks = [chunk.text.lower() for chunk in doc.noun_chunks]
+
+    topic_key = None
+    for key in KNOWLEDGE_BASE:
+        if key in query.lower() or any(keyword in key for keyword in keywords) or any(entity in key for entity in entities):
+            topic_key = key
+            break
+
+    if not keywords:
+        keywords = noun_chunks or interests or ["learning"]
+
+    topic = " ".join(keywords[:2]).capitalize() if keywords else query.capitalize()
+    
+    if topic_key:
+        data = KNOWLEDGE_BASE[topic_key]
+    else:
+        data = web_search(query)  # Fetch web-like data for unsupported topics
+
+    details = data["details"]
+    examples = data["examples"]
+    reasons = data["reasons"]
+    actions = data["actions"]
+    context = data["context"]
+    fun_fact = data["fun_fact"]
+    recommendations = data["recommendations"]
+    detail = random.choice(details)
+    example = random.choice(examples)
+    reason = random.choice(reasons)
+    action = random.choice(actions)
+    recommendation = random.choice(recommendations)
+
+    content = (
+        f"# {topic}\n\n"
+        f"**Overview**: {topic} is a fascinating subject focusing on {detail}. {context}\n\n"
+        f"**Example**: For instance, {example}. This demonstrates how {detail} impacts everyday life.\n\n"
+        f"**Why It Matters**: This is significant because of {reason}.\n\n"
+        f"**Get Started**: To dive deeper, try {action}. You can also explore connections with {', '.join(interests) or 'similar topics'}.\n\n"
+        f"**Fun Fact**: {fun_fact}\n\n"
+        f"**Recommendation**: {recommendation}"
+    )
+    return content, keywords + entities, recommendations
+
+def generate_quiz_questions(query, interests):
+    if not isinstance(query, str) or not query.strip():
+        query = "learning"
+
+    doc = nlp(query.lower())
+    keywords = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
+    if not keywords:
+        keywords = ["learning", "concepts"]
+
+    topic = " ".join(keywords[:2]).capitalize()
+    core = keywords[0]
+
+    topic_key = next((k for k in KNOWLEDGE_BASE if k in query.lower() or any(keyword in k for keyword in keywords)), None)
+    if topic_key:
+        data = KNOWLEDGE_BASE[topic_key]
+    else:
+        data = web_search(query)
+
+    detail1 = random.choice(data["details"])
+    detail2 = random.choice([d for d in data["examples"] if d != detail1]) if len(data["details"]) > 1 else "generic concept"
+    example = random.choice(data["examples"]).split(" in ")[0] if " in " in random.choice(data["examples"]) else random.choice(data["examples"])
+    action = random.choice(data["actions"])
+    reason = random.choice(data["reasons"])
+    recommendation = random.choice(data["recommendations"])
+    
+    questions = [
+        {
+            "q": f"What is a core component of {topic}?",
+            "options": [detail1, "random concept", "unrelated term", "generic idea"],
+            "correct": detail1
+        },
+        {
+            "q": f"What is another key aspect of {topic}?",
+            "options": [detail2, "irrelevant idea", "off-topic term", "none"],
+            "correct": detail2
+        },
+        {
+            "q": f"What is a real-world application of {topic}?",
+            "options": [example, "unrelated application", "random guess", "none"],
+            "correct": example
+        },
+        {
+            "q": f"Why is {topic} significant?",
+            "options": [reason, "no reason", "irrelevant", "not important"],
+            "correct": reason
+        },
+        {
+            "q": f"How can you learn more about {topic}?",
+            "options": [action, "do nothing", "avoid it", "guess"],
+            "correct": action
+        },
+        {
+            "q": f"What is a historical aspect of {topic}?",
+            "options": [data["context"].split(",")[0], "random event", "unrelated fact", "none"],
+            "correct": data["context"].split(",")[0]
+        },
+        {
+            "q": f"What is a fun fact about {topic}?",
+            "options": [data["fun_fact"], "random trivia", "unrelated fact", "no fun facts"],
+            "correct": data["fun_fact"]
+        },
+        {
+            "q": f"What is a recommended way to explore {topic}?",
+            "options": [recommendation, "unrelated activity", "random suggestion", "none"],
+            "correct": recommendation
+        }
+    ]
+    return questions
+
+class LearningAssistantApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Learning Assistant")
+        self.root.geometry("900x600")
+        self.root.configure(bg="#F5F5F5")
+        
+        self.progress = []
+        
+        self.style = ttk.Style()
+        self.style.configure("TButton", font=("Arial", 10, "bold"), padding=5)
+        self.style.map("TButton", background=[("active", "#42A5F5")])
+        
+        # Input Section
+        self.input_frame = tk.Frame(root, bg="#E6F0FA", bd=2, relief=tk.RAISED)
+        self.input_frame.pack(pady=10, padx=10, fill=tk.X)
+        
+        self.query_label = tk.Label(self.input_frame, text="Enter your learning goal or topic (e.g., machine learning, biology):",
+                                   font=("Arial", 12, "bold"), bg="#E6F0FA", fg="#003087")
+        self.query_label.pack(anchor='w', padx=10, pady=5)
+        self.query_entry = tk.Entry(self.input_frame, width=80, font=("Arial", 10), bg="#FFFFFF", fg="#000000")
+        self.query_entry.pack(fill=tk.X, padx=10, pady=5)
+        
+        self.interest_label = tk.Label(self.input_frame, text="Enter interests (comma-separated, e.g., AI, robotics):",
+                                      font=("Arial", 12, "bold"), bg="#E6F0FA", fg="#003087")
+        self.interest_label.pack(anchor='w', padx=10, pady=5)
+        self.interest_entry = tk.Entry(self.input_frame, width=80, font=("Arial", 10), bg="#FFFFFF", fg="#000000")
+        self.interest_entry.pack(fill=tk.X, padx=10, pady=5)
+        
+        self.button_frame = tk.Frame(self.input_frame, bg="#E6F0FA")
+        self.button_frame.pack(pady=10)
+        self.submit_button = ttk.Button(self.button_frame, text="Generate Content", command=self.generate,
+                                       style="TButton")
+        self.submit_button.pack(side=tk.LEFT, padx=5)
+        self.take_quiz_button = ttk.Button(self.button_frame, text="Take Quiz", command=self.open_quiz_window,
+                                          style="TButton")
+        self.take_quiz_button.pack(side=tk.LEFT, padx=5)
+        self.clear_button = ttk.Button(self.button_frame, text="Clear Inputs", command=self.clear_inputs,
+                                      style="TButton")
+        self.clear_button.pack(side=tk.LEFT, padx=5)
+        self.regenerate_button = ttk.Button(self.button_frame, text="Regenerate", command=self.regenerate,
+                                           style="TButton")
+        self.regenerate_button.pack(side=tk.LEFT, padx=5)
+        self.save_button = ttk.Button(self.button_frame, text="Save Content", command=self.save_content,
+                                     style="TButton")
+        self.save_button.pack(side=tk.LEFT, padx=5)
+        self.save_progress_button = ttk.Button(self.button_frame, text="Save Progress", command=self.save_progress,
+                                              style="TButton")
+        self.save_progress_button.pack(side=tk.LEFT, padx=5)
+        self.show_progress_button = ttk.Button(self.button_frame, text="Show Progress", command=self.show_progress,
+                                              style="TButton")
+        self.show_progress_button.pack(side=tk.LEFT, padx=5)
+
+        # Content Output Section
+        self.content_frame = tk.Frame(root, bg="#FFF8E1", bd=2, relief=tk.RAISED)
+        self.content_frame.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+        
+        self.output_label = tk.Label(self.content_frame, text="Generated Learning Content:",
+                                    font=("Arial", 12, "bold"), bg="#FFF8E1", fg="#3E2723")
+        self.output_label.pack(anchor='w', padx=10, pady=5)
+        
+        self.output_text = tk.Text(self.content_frame, height=20, wrap=tk.WORD, font=("Arial", 10),
+                                  bg="#FFFFFF", fg="#000000", bd=1, relief=tk.SUNKEN)
+        self.output_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=5)
+        self.output_scroll = tk.Scrollbar(self.content_frame, orient=tk.VERTICAL, command=self.output_text.yview)
+        self.output_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.output_text.config(yscrollcommand=self.output_scroll.set)
+
+    def generate(self):
+        query = self.query_entry.get().strip()
+        interests = [i.strip() for i in self.interest_entry.get().split(",") if i.strip()]
+        if not query:
+            messagebox.showerror("Input Error", "Please enter a learning goal or topic.")
+            return
+        if len(query.split()) < 2 and not any(k in query.lower() for k in KNOWLEDGE_BASE):
+            messagebox.showwarning("Input Warning", "Please provide a more specific topic for better content.")
+        
+        self.last_query = query
+        self.last_interests = interests
+        self._generate_content(query, interests)
+
+    def _generate_content(self, query, interests):
+        content, keywords, recommendations = generate_content(query, interests)
+        
+        self.output_text.delete(1.0, tk.END)
+        self.output_text.insert(tk.END, content)
+        
+        self.current_recommendations = recommendations
+        self.questions = generate_quiz_questions(query, interests)
+
+    def open_quiz_window(self):
+        if not hasattr(self, "questions") or not self.questions:
+            messagebox.showinfo("Info", "Please generate content first.")
+            return
+
+        quiz_window = tk.Toplevel(self.root)
+        quiz_window.title("Quiz")
+        quiz_window.geometry("800x600")
+        quiz_window.configure(bg="#ECEFF1")
+
+        quiz_canvas = tk.Canvas(quiz_window, height=500, bg="#FFFFFF", bd=1, relief=tk.SUNKEN)
+        quiz_scrollbar = tk.Scrollbar(quiz_window, orient=tk.VERTICAL, command=quiz_canvas.yview)
+        quiz_frame = tk.Frame(quiz_canvas, bg="#FFFFFF")
+        
+        quiz_frame.bind("<Configure>", lambda e: quiz_canvas.configure(scrollregion=quiz_canvas.bbox("all")))
+        quiz_canvas.create_window((0, 0), window=quiz_frame, anchor="nw")
+        quiz_canvas.configure(yscrollcommand=quiz_scrollbar.set)
+        
+        quiz_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+        quiz_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.vars = []
+        for i, q in enumerate(self.questions):
+            tk.Label(quiz_frame, text=q['q'], wraplength=700, justify=tk.LEFT, font=("Arial", 10),
+                     bg="#FFFFFF", fg="#000000").pack(anchor='w', pady=5)
+            var = tk.StringVar()
+            self.vars.append(var)
+            for option in q['options']:
+                tk.Radiobutton(quiz_frame, text=option, variable=var, value=option, wraplength=700,
+                               justify=tk.LEFT, font=("Arial", 10), bg="#FFFFFF", fg="#000000").pack(anchor='w')
+            if i == len(self.questions) - 1:
+                submit_btn = ttk.Button(quiz_frame, text="Submit Quiz", command=lambda: self.evaluate_quiz(quiz_window),
+                                        style="TButton")
+                submit_btn.pack(pady=10)
+
+    def evaluate_quiz(self, quiz_window):
+        score = 0
+        total = len(self.questions)
+        results = []
+        
+        for i, q in enumerate(self.questions):
+            selected = self.vars[i].get()
+            correct = q['correct']
+            if selected == correct:
+                score += 1
+                results.append(f"Q{i+1}: ✅ Correct")
+            else:
+                results.append(f"Q{i+1}: ❌ Incorrect (Correct: {correct})")
+        
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.progress.append((timestamp, self.last_query, score, total))
+        
+        recommendation = random.choice(self.current_recommendations)
+        messagebox.showinfo("Quiz Results", 
+                            f"Score: {score}/{total}\n\n" + 
+                            "\n".join(results) + 
+                            f"\n\n**Recommendation**: {recommendation}\n" +
+                            f"**Next Steps**: Try another quiz on {self.last_query} or explore related topics: {', '.join(self.last_interests) or 'similar topics'}.")
+        
+        quiz_window.destroy()
+
+    def regenerate(self):
+        if hasattr(self, "last_query"):
+            self._generate_content(self.last_query, self.last_interests)
+        else:
+            messagebox.showinfo("Info", "Please generate content first.")
+
+    def clear_inputs(self):
+        self.query_entry.delete(0, tk.END)
+        self.interest_entry.delete(0, tk.END)
+        self.output_text.delete(1.0, tk.END)
+        self.last_query = ""
+        self.last_interests = []
+        self.questions = []
+        self.current_recommendations = []
+
+    def save_content(self):
+        content = self.output_text.get(1.0, tk.END).strip()
+        if not content:
+            messagebox.showwarning("Warning", "No content to save.")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+            initialfile=f"LearningContent_{uuid.uuid4().hex[:6]}.txt"
+        )
+
+        if file_path:
+            try:
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                messagebox.showinfo("Success", f"Content saved to:\n{file_path}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save content:\n{str(e)}")
+
+    def save_progress(self):
+        if not self.progress:
+            messagebox.showwarning("Warning", "No progress to save.")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            initialfile=f"LearningProgress_{uuid.uuid4().hex[:6]}.json"
+        )
+
+        if file_path:
+            try:
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(self.progress, f, indent=4)
+                messagebox.showinfo("Success", f"Progress saved to:\n{file_path}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save progress:\n{str(e)}")
+
+    def show_progress(self):
+        if not self.progress:
+            messagebox.showinfo("Progress", "No quiz progress recorded yet.")
+            return
+        
+        progress_text = "Quiz Progress:\n\n" + "\n".join(
+            f"{t}: {topic} - Score: {score}/{total}" for t, topic, score, total in self.progress
+        )
+        messagebox.showinfo("Progress", progress_text)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = LearningAssistantApp(root)
+    root.mainloop()
