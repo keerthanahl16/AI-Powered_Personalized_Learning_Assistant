@@ -2,7 +2,7 @@ Learning Assistant Application
 
 Overview
 
-The Learning Assistant is a Python-based desktop application built using Tkinter and spaCy to help users explore and learn about various topics interactively. It provides detailed content about a user-specified topic, generates quizzes to test knowledge, and tracks learning progress. The application supports a wide range of topics through an internal knowledge base and simulates web searches for unsupported topics.
+The Learning Assistant is a Python-based desktop application built using spaCy to help users explore and learn about various topics interactively. It provides detailed content about a user-specified topic, generates quizzes to test knowledge, and tracks learning progress. The application supports a wide range of topics through an internal knowledge base and simulates web searches for unsupported topics.
 
 Features
 
